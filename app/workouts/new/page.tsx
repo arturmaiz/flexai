@@ -16,14 +16,18 @@ import { useCallback, useState } from "react";
 import { formSchema } from "./schema/formSchema";
 import { Exercise } from "./types";
 import { getYouTubeThumbnail } from "@/lib/youtube";
-import { parseWorkoutPlanText } from "@/lib/workout";
+import { parseWorkoutPlanText } from "@/lib/utils";
+import { useMutation } from "@tanstack/react-query";
+import { saveWorkoutPlan } from "@/lib/workout";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 const NewWorkoutPage = () => {
-  const [isLoading, setIsLoading] = useState(false);
   const [workoutPlan, setWorkoutPlan] = useState<string | null>(null);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [introText, setIntroText] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -34,15 +38,9 @@ const NewWorkoutPage = () => {
     },
   });
 
-  const onSubmit = useCallback(async (values: z.infer<typeof formSchema>) => {
-    setIsLoading(true);
-    setError(null);
-    setWorkoutPlan(null);
-    setExercises([]);
-    setIntroText("");
-
-    try {
-      const response = await fetch("/api/workout", {
+  const generatePlanMutation = useMutation({
+    mutationFn: async (values: z.infer<typeof formSchema>) => {
+      const response = await fetch("/api/generate-workout", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -51,34 +49,108 @@ const NewWorkoutPage = () => {
       });
 
       const data = await response.json();
-      console.log(data);
-
       if (!response.ok) {
-        setError(data.error || "Failed to generate workout plan");
-        return;
+        throw new Error(data.error || "Failed to generate workout plan");
       }
-
-      const plan = data.data.workoutPlan;
+      return data.data.workoutPlan as string;
+    },
+    onSuccess: (plan: string) => {
       setWorkoutPlan(plan);
       const parsed = parseWorkoutPlanText(plan);
       setIntroText(parsed.introText);
       setExercises(parsed.exercises);
-    } catch (err) {
-      setError("Failed to connect to server");
-      console.error("Request failed:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    },
+    onError: (err: unknown) => {
+      const message =
+        err instanceof Error ? err.message : "Failed to connect to server";
+      setError(message);
+    },
+  });
+
+  const onSubmit = useCallback(
+    async (values: z.infer<typeof formSchema>) => {
+      setError(null);
+      setWorkoutPlan(null);
+      setExercises([]);
+      setIntroText("");
+
+      generatePlanMutation.mutate(values);
+    },
+    [generatePlanMutation]
+  );
+
+  const savePlanMutation = useMutation({
+    mutationFn: async () => {
+      if (!workoutPlan) throw new Error("No workout plan to save");
+      const { username, age, workoutGoal } = form.getValues();
+      const id = await saveWorkoutPlan({
+        username,
+        age,
+        workout_goal: workoutGoal,
+        intro_text: introText,
+        plan_text: workoutPlan,
+        exercises,
+      });
+      return id;
+    },
+    onSuccess: (_id: string) => {
+      router.push("/workouts");
+    },
+    onError: (err: unknown) => {
+      const message =
+        err instanceof Error ? err.message : "Failed to save workout plan";
+      setError(message);
+    },
+  });
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
       <div className="w-full max-w-7xl">
-        <h1 className="text-3xl font-bold text-center mb-8">
-          Create Your Personalized Workout Plan
-        </h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl font-bold">
+            Create Your Personalized Workout Plan
+          </h1>
+          <div className="flex gap-3">
+            <Link href="/">
+              <Button variant="outline" className="font-semibold">
+                <svg
+                  className="w-4 h-4 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                  />
+                </svg>
+                Home
+              </Button>
+            </Link>
+            <Link href="/workouts">
+              <Button variant="outline" className="font-semibold">
+                <svg
+                  className="w-4 h-4 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                  />
+                </svg>
+                My Workouts
+              </Button>
+            </Link>
+          </div>
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="gap-8 max-w-3xl m-8 mx-auto">
           <div>
             <Form {...form}>
               <form
@@ -141,8 +213,12 @@ const NewWorkoutPage = () => {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={generatePlanMutation.isPending}
+                >
+                  {generatePlanMutation.isPending
                     ? "Generating Your Plan..."
                     : "Generate Workout Plan"}
                 </Button>
@@ -150,7 +226,7 @@ const NewWorkoutPage = () => {
             </Form>
           </div>
 
-          <div className="lg:border-l lg:pl-8">
+          <div className="m-8">
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-800 rounded-lg p-4 mb-4">
                 <p className="font-semibold">Error</p>
@@ -158,7 +234,7 @@ const NewWorkoutPage = () => {
               </div>
             )}
 
-            {isLoading && (
+            {generatePlanMutation.isPending && (
               <div className="flex flex-col items-center justify-center h-full">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mb-4"></div>
                 <p className="text-gray-600 text-lg">
@@ -167,7 +243,7 @@ const NewWorkoutPage = () => {
               </div>
             )}
 
-            {workoutPlan && !isLoading && (
+            {workoutPlan && !generatePlanMutation.isPending && (
               <div className="space-y-4">
                 {introText && (
                   <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-6 mb-6">
@@ -263,12 +339,44 @@ const NewWorkoutPage = () => {
                     </p>
                   </div>
                 )}
+
+                <div className="pt-6 border-t mt-6">
+                  <Button
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-6 text-lg shadow-lg hover:shadow-xl transition-all"
+                    disabled={savePlanMutation.isPending}
+                    onClick={() => savePlanMutation.mutate()}
+                  >
+                    {savePlanMutation.isPending ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                        <span>Saving...</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center gap-2">
+                        <svg
+                          className="w-6 h-6"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
+                          />
+                        </svg>
+                        <span>Save Workout Plan</span>
+                      </div>
+                    )}
+                  </Button>
+                </div>
               </div>
             )}
 
-            {!workoutPlan && !isLoading && !error && (
+            {!workoutPlan && !generatePlanMutation.isPending && !error && (
               <div className="flex flex-col items-center justify-center h-full text-center text-gray-500">
-                <p className="text-lg">
+                <p className="text-lg m-8">
                   Fill out the form to generate your personalized workout plan
                 </p>
               </div>

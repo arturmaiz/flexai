@@ -1,30 +1,45 @@
-import type { Exercise } from "@/app/workout/new/types";
+import { supabase } from "./supabase";
+import { WorkoutPlanRecord } from "./types";
+import { WORKOUT_PLANS_TABLE } from "./constants";
 
-export const parseWorkoutPlanText = (
-  text: string
-): { introText: string; exercises: Exercise[] } => {
-  const exerciseBlocks = text.split("---").filter((block) => block.trim());
-  const parsedExercises: Exercise[] = [];
-  let intro = "";
+export async function saveWorkoutPlan(
+  record: Omit<WorkoutPlanRecord, "id" | "created_at">
+): Promise<string> {
+  const { data, error } = await supabase
+    .from(WORKOUT_PLANS_TABLE)
+    .insert(record)
+    .select("id")
+    .single();
 
-  exerciseBlocks.forEach((block, index) => {
-    const exerciseMatch = block.match(/EXERCISE:\s*(.+)/i);
-    const setsMatch = block.match(/SETS:\s*(.+)/i);
-    const repsMatch = block.match(/REPS:\s*(.+)/i);
-    const videoMatch = block.match(/VIDEO:\s*(.+)/i);
+  if (error) {
+    throw new Error(error.message);
+  }
+  return data.id as string;
+}
 
-    if (exerciseMatch && setsMatch && repsMatch && videoMatch) {
-      parsedExercises.push({
-        name: exerciseMatch[1].trim(),
-        sets: setsMatch[1].trim(),
-        reps: repsMatch[1].trim(),
-        videoUrl: videoMatch[1].trim(),
-      });
-    } else if (index === 0) {
-      intro = block.trim();
-    }
-  });
+export async function fetchWorkoutPlans(): Promise<WorkoutPlanRecord[]> {
+  const { data, error } = await supabase
+    .from(WORKOUT_PLANS_TABLE)
+    .select("*")
+    .order("created_at", { ascending: false });
 
-  const derivedIntro = intro || text.split("EXERCISE:")[0] || text;
-  return { introText: derivedIntro, exercises: parsedExercises };
-};
+  if (error) {
+    throw new Error(error.message);
+  }
+  return data as WorkoutPlanRecord[];
+}
+
+export async function fetchWorkoutPlanById(
+  id: string
+): Promise<WorkoutPlanRecord> {
+  const { data, error } = await supabase
+    .from(WORKOUT_PLANS_TABLE)
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+  return data as WorkoutPlanRecord;
+}
