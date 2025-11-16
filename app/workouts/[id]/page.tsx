@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { fetchWorkoutPlanById } from "@/lib/workout";
 import type { WorkoutPlanRecord } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { getYouTubeThumbnail } from "@/lib/youtube";
-import Link from "next/link";
+import { Dumbbell, CalendarDays, Hash, Play } from "lucide-react";
 
 export default function WorkoutDetailPage() {
   const params = useParams();
@@ -15,15 +18,32 @@ export default function WorkoutDetailPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  const created = useMemo(() => {
+    const d = workout?.created_at ? new Date(workout.created_at) : null;
+    return d
+      ? d.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })
+      : "";
+  }, [workout?.created_at]);
+
+  const initials = useMemo(() => {
+    const u = workout?.username || "User";
+    const parts = u.split(" ");
+    return (
+      (parts[0]?.[0] || "U").toUpperCase() + (parts[1]?.[0] || "").toUpperCase()
+    );
+  }, [workout?.username]);
+
   useEffect(() => {
     let isMounted = true;
     (async () => {
       try {
         const id = params.id as string;
         const data = await fetchWorkoutPlanById(id);
-        if (isMounted) {
-          setWorkout(data);
-        }
+        if (isMounted) setWorkout(data);
       } catch (err) {
         if (isMounted) {
           const message =
@@ -41,20 +61,24 @@ export default function WorkoutDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mb-4"></div>
-        <p className="text-gray-600">Loading workout...</p>
+      <div className="flex min-h-screen flex-col items-center justify-center p-6">
+        <div className="h-12 w-12 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-foreground" />
+        <p className="mt-4 text-muted-foreground">Loading workout…</p>
       </div>
     );
   }
 
   if (error || !workout) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <div className="bg-red-50 border border-red-200 text-red-800 rounded-lg p-4 mb-4 max-w-lg">
-          <p className="font-semibold">Error</p>
-          <p>{error || "Workout not found"}</p>
-        </div>
+      <div className="flex min-h-screen flex-col items-center justify-center p-6">
+        <Card className="mb-6 w-full max-w-lg border-destructive/30 bg-destructive/5">
+          <CardHeader>
+            <CardTitle className="text-destructive">Error</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-destructive">
+            {error || "Workout not found"}
+          </CardContent>
+        </Card>
         <Button onClick={() => router.push("/workouts")}>
           Back to Workouts
         </Button>
@@ -62,163 +86,135 @@ export default function WorkoutDetailPage() {
     );
   }
 
-  return (
-    <div className="flex flex-col min-h-screen p-4">
-      <div className="w-full max-w-7xl mx-auto">
-        <div className="mb-6">
-          <div className="flex gap-3 mb-4">
-            <Link href="/">
-              <Button variant="outline" className="font-semibold">
-                <svg
-                  className="w-4 h-4 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                  />
-                </svg>
-                Home
-              </Button>
-            </Link>
-            <Link href="/workouts">
-              <Button variant="outline" className="font-semibold">
-                <svg
-                  className="w-4 h-4 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                  />
-                </svg>
-                My Workouts
-              </Button>
-            </Link>
-          </div>
-
-          <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl p-6 text-white shadow-lg">
-            <h1 className="text-4xl font-bold mb-2">{workout.username}</h1>
-            <p className="text-xl opacity-90 mb-1">
-              Goal: {workout.workout_goal}
-            </p>
-            <p className="text-sm opacity-75">
-              Age: {workout.age} years
-              {workout.created_at && (
-                <span className="ml-4">
-                  Created: {new Date(workout.created_at).toLocaleDateString()}
-                </span>
-              )}
-            </p>
-          </div>
+  const AiMessage = ({ title, text }: { title: string; text?: string }) => (
+    <div className="relative rounded-2xl border border-gray-200 bg-white/80 p-5 shadow-sm">
+      <div className="absolute left-0 top-0 h-full w-[3px] rounded-l-2xl bg-gradient-to-b from-indigo-500 via-fuchsia-500 to-emerald-500" />
+      <div className="flex items-start gap-3">
+        <div className="grid h-9 w-9 flex-none place-items-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 font-bold text-white">
+          AI
         </div>
-
-        {workout.intro_text && (
-          <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-6 mb-8">
-            <h2 className="text-xl font-bold text-gray-800 mb-3">
-              Your Personalized Plan 📋
-            </h2>
-            <p className="text-gray-800 whitespace-pre-wrap leading-relaxed">
-              {workout.intro_text}
-            </p>
+        <div className="min-w-0 flex-1">
+          <div className="mb-1 flex flex-wrap items-center gap-2 text-sm">
+            <span className="font-semibold">{title}</span>
+            {created && (
+              <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs text-gray-700">
+                <CalendarDays className="mr-1 h-3.5 w-3.5" /> {created}
+              </span>
+            )}
+            {workout?.age && (
+              <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs text-gray-700">
+                <Hash className="mr-1 h-3.5 w-3.5" /> Age {workout.age}
+              </span>
+            )}
           </div>
-        )}
+          {text && (
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+              {text}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-800 mb-6">
+  const ExerciseCard = ({
+    exercise,
+    index,
+  }: {
+    exercise: any;
+    index: number;
+  }) => (
+    <li>
+      <div className="group relative rounded-2xl bg-white p-[1px] shadow-sm transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-md">
+        <div className="absolute inset-0 -z-10 rounded-2xl bg-[linear-gradient(135deg,rgba(99,102,241,.25),rgba(217,70,239,.18),rgba(16,185,129,.22))] opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+        <div className="relative rounded-[14px] border border-gray-200 bg-white p-5">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h3 className="text-base font-semibold md:text-lg">
+              {index + 1}. {exercise.name}
+            </h3>
+            <div className="flex gap-2">
+              <Badge variant="secondary" className="rounded-full">
+                {exercise.sets} sets
+              </Badge>
+              <Badge variant="outline" className="rounded-full">
+                {exercise.reps} reps
+              </Badge>
+            </div>
+          </div>
+
+          <Link
+            href={exercise.videoUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block overflow-hidden rounded-xl ring-1 ring-inset ring-muted/40 transition duration-200 group-hover:ring-foreground/40"
+          >
+            <div className="relative w-full" style={{ paddingTop: "56.25%" }}>
+              <img
+                src={getYouTubeThumbnail(exercise.videoUrl, exercise.name)}
+                alt={`${exercise.name} tutorial`}
+                className="absolute top-0 left-0 h-full w-full object-cover will-change-transform transition-transform duration-200 group-hover:scale-[1.02]"
+                loading="lazy"
+                decoding="async"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src =
+                    "https://via.placeholder.com/640x360/111827/FFFFFF?text=Tutorial";
+                }}
+              />
+              <div className="pointer-events-none absolute bottom-0 left-0 right-0 flex items-center gap-2 p-3 text-sm text-white/95">
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/40">
+                  <Play className="h-3.5 w-3.5" />
+                </span>
+                <span className="font-medium drop-shadow">Watch tutorial</span>
+              </div>
+            </div>
+          </Link>
+        </div>
+      </div>
+    </li>
+  );
+
+  return (
+    <div className="min-h-screen p-6 md:p-10">
+      <div className="mx-auto w-full max-w-7xl space-y-8">
+        <AiMessage
+          title={`${workout.username} wants to ${workout.workout_goal}`}
+          text={workout.intro_text || undefined}
+        />
+
+        <section>
+          <h2 className="mb-4 text-2xl font-semibold tracking-tight md:text-3xl">
             Your Exercises 💪
           </h2>
 
           {Array.isArray(workout.exercises) && workout.exercises.length > 0 ? (
-            <div className="grid grid-cols-1 gap-6">
+            <ul className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
               {workout.exercises.map((exercise, index) => (
-                <div
-                  key={index}
-                  className="bg-white border-2 border-gray-200 rounded-xl shadow-lg hover:shadow-xl transition-shadow overflow-hidden"
-                >
-                  <div className="p-4 bg-gradient-to-r from-blue-500 to-purple-600">
-                    <h3 className="text-2xl font-bold text-white">
-                      {index + 1}. {exercise.name}
-                    </h3>
-                  </div>
-
-                  <div className="p-6">
-                    <div className="flex gap-4 mb-6">
-                      <div className="flex-1 bg-blue-50 rounded-lg p-4 text-center">
-                        <p className="text-sm text-gray-600 font-medium mb-1">
-                          Sets
-                        </p>
-                        <p className="text-3xl font-bold text-blue-600">
-                          {exercise.sets}
-                        </p>
-                      </div>
-                      <div className="flex-1 bg-purple-50 rounded-lg p-4 text-center">
-                        <p className="text-sm text-gray-600 font-medium mb-1">
-                          Reps
-                        </p>
-                        <p className="text-3xl font-bold text-purple-600">
-                          {exercise.reps}
-                        </p>
-                      </div>
-                    </div>
-
-                    <a
-                      href={exercise.videoUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block relative group rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-all"
-                    >
-                      <div className="relative">
-                        <img
-                          src={getYouTubeThumbnail(
-                            exercise.videoUrl,
-                            exercise.name
-                          )}
-                          alt={`${exercise.name} tutorial`}
-                          className="w-full h-80 object-cover"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src =
-                              "https://via.placeholder.com/640x360/FF0000/FFFFFF?text=YouTube+Tutorial";
-                          }}
-                        />
-                        <div className="absolute inset-0 bg-black bg-opacity-40 group-hover:bg-opacity-50 transition-all flex items-center justify-center">
-                          <div className="transform group-hover:scale-110 transition-transform">
-                            <svg
-                              className="w-24 h-24 text-white drop-shadow-lg"
-                              fill="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path d="M8 5v14l11-7z" />
-                            </svg>
-                          </div>
-                        </div>
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
-                          <p className="text-white font-semibold">
-                            🎥 Watch Tutorial on YouTube
-                          </p>
-                        </div>
-                      </div>
-                    </a>
-                  </div>
-                </div>
+                <ExerciseCard
+                  key={`${exercise.name}-${index}`}
+                  exercise={exercise}
+                  index={index}
+                />
               ))}
-            </div>
+            </ul>
           ) : (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-              <p className="text-gray-800 whitespace-pre-wrap">
-                {workout.plan_text}
-              </p>
-            </div>
+            <Card className="border-muted/40">
+              <CardContent className="p-6">
+                <p className="whitespace-pre-wrap text-muted-foreground">
+                  {workout.plan_text}
+                </p>
+              </CardContent>
+            </Card>
           )}
+        </section>
+
+        <div className="flex items-center justify-end gap-3 pt-2">
+          <Link href="/workouts">
+            <Button variant="ghost">Back</Button>
+          </Link>
+          <Link href={`/workouts/${params.id}/edit`}>
+            <Button>Edit Plan</Button>
+          </Link>
         </div>
       </div>
     </div>

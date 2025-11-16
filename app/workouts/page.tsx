@@ -1,10 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { fetchWorkoutPlans } from "@/lib/workout";
-import type { WorkoutPlanRecord } from "@/lib/types";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { fetchWorkoutPlans } from "@/lib/workout";
+import type { WorkoutPlanRecord } from "@/lib/types";
+import {
+  Wand2,
+  Sparkles,
+  ChevronRight,
+  BadgeCheck,
+  CalendarDays,
+  Dumbbell,
+} from "lucide-react";
 
 export default function WorkoutsPage() {
   const [plans, setPlans] = useState<WorkoutPlanRecord[]>([]);
@@ -16,9 +24,7 @@ export default function WorkoutsPage() {
     (async () => {
       try {
         const data = await fetchWorkoutPlans();
-        if (isMounted) {
-          setPlans(data);
-        }
+        if (isMounted) setPlans(data);
       } catch (err) {
         if (isMounted) {
           const message =
@@ -35,163 +41,196 @@ export default function WorkoutsPage() {
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center">
-      <div className="w-full max-w-7xl">
-        <div className="flex justify-end gap-3 mb-6">
-          <Link href="/">
-            <Button variant="outline" className="font-semibold">
-              <svg
-                className="w-4 h-4 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                />
-              </svg>
-              Home
-            </Button>
-          </Link>
-          <Link href="/workouts">
-            <Button variant="outline" className="font-semibold">
-              <svg
-                className="w-4 h-4 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                />
-              </svg>
-              My Workouts
-            </Button>
-          </Link>
-        </div>
+    <div className="min-h-[calc(100vh-72px)] p-6 md:p-10">
+      <div className="mx-auto w-full max-w-7xl">
+        {/* Header */}
+        <div className="mb-8 flex flex-col items-start justify-between gap-4 md:mb-10 md:flex-row md:items-center">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
+              Your Workouts
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              AI-tailored plans that learn you—volume, intensity, and movements.
+            </p>
+          </div>
 
-        <div className="m-8">
-          <h1 className="text-3xl font-bold mb-4">Your Workouts</h1>
           <Link href="/workouts/new">
-            <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all">
-              <svg
-                className="w-5 h-5 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-              Generate New Workout
-            </Button>
+            <GenerateAIButton />
           </Link>
         </div>
 
+        {/* Loading */}
         {loading && (
-          <div className="text-center text-gray-600">Loading workouts...</div>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <CardSkeleton key={i} />
+            ))}
+          </div>
         )}
+
+        {/* Error */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-800 rounded-lg p-4 mb-4">
+          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">
             {error}
           </div>
         )}
-        {!loading && !error && plans.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16">
-            <div className="text-6xl mb-4">💪</div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">
-              No Workouts Yet
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Start your fitness journey by creating your first workout plan!
-            </p>
-            <Link href="/workouts/new">
-              <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-6 px-8 text-lg shadow-lg hover:shadow-xl transition-all">
-                <svg
-                  className="w-6 h-6 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-                Create Your First Workout
-              </Button>
-            </Link>
-          </div>
-        )}
 
+        {/* Empty */}
+        {!loading && !error && plans.length === 0 && <EmptyState />}
+
+        {/* List */}
         {!loading && !error && plans.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {plans.map((plan) => (
-              <Link
-                key={plan.id}
-                href={`/workouts/${plan.id}`}
-                className="bg-white border-2 border-gray-200 rounded-xl shadow-sm hover:shadow-lg hover:border-blue-400 transition-all p-6 flex flex-col cursor-pointer transform hover:scale-105"
-              >
-                <div className="mb-3">
-                  <h3 className="text-xl font-semibold text-gray-800 mb-1">
-                    {plan.username}
-                  </h3>
-                  <p className="text-sm text-blue-600 font-medium">
-                    🎯 {plan.workout_goal}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-2">
-                    {plan.created_at
-                      ? new Date(plan.created_at).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })
-                      : ""}
-                  </p>
-                </div>
-                <p className="text-gray-700 line-clamp-3 whitespace-pre-wrap mb-3 flex-grow">
-                  {plan.intro_text}
-                </p>
-                <div className="mt-auto pt-3 border-t border-gray-200 flex items-center justify-between">
-                  <div className="text-sm text-gray-600 font-medium">
-                    {Array.isArray(plan.exercises) && (
-                      <span>💪 {plan.exercises.length} exercises</span>
-                    )}
-                  </div>
-                  <div className="text-blue-600 font-medium text-sm flex items-center">
-                    View
-                    <svg
-                      className="w-4 h-4 ml-1"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </div>
-                </div>
-              </Link>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {plans.map((p) => (
+              <WorkoutCard key={p.id} plan={p} />
             ))}
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/* ===========================
+   Components
+   =========================== */
+
+function GenerateAIButton() {
+  return (
+    <Button
+      size="lg"
+      className="group relative overflow-hidden rounded-xl border border-primary/20 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 px-5 font-semibold text-white shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl"
+    >
+      {/* shine */}
+      <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent opacity-0 transition-all duration-700 group-hover:translate-x-0 group-hover:opacity-100" />
+      <Sparkles className="mr-2 h-5 w-5 animate-[float_2.4s_ease-in-out_infinite]" />
+      Generate with AI
+      <Wand2 className="ml-2 h-5 w-5" />
+      <style jsx>{`
+        @keyframes float {
+          0%,
+          100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-3px);
+          }
+        }
+      `}</style>
+    </Button>
+  );
+}
+
+function WorkoutCard({ plan }: { plan: WorkoutPlanRecord }) {
+  const created = useMemo(
+    () =>
+      plan.created_at
+        ? new Date(plan.created_at).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })
+        : "",
+    [plan.created_at]
+  );
+
+  const initials =
+    (plan.username?.[0] ?? "U").toUpperCase() +
+    (plan.username?.split(" ")?.[1]?.[0]?.toUpperCase() ?? "");
+
+  return (
+    <Link
+      href={`/workouts/${plan.id}`}
+      className="group relative block rounded-2xl border border-transparent bg-white p-[1px] shadow-sm transition-all hover:shadow-xl"
+    >
+      {/* gradient border on hover */}
+      <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-indigo-500/30 via-fuchsia-500/20 to-emerald-500/30 opacity-0 blur transition-opacity duration-300 group-hover:opacity-100" />
+      <div className="relative rounded-[14px] border border-gray-200 bg-white p-5">
+        {/* Top row: avatar + goal badge + verified AI */}
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500/80 to-purple-600/80 text-sm font-bold text-white shadow-sm">
+              {initials}
+            </div>
+            <div>
+              <p className="text-sm font-semibold leading-none">
+                {plan.username}
+              </p>
+              <div className="mt-1 inline-flex items-center gap-1 text-xs text-blue-600">
+                <Dumbbell className="h-3.5 w-3.5" />
+                <span className="font-medium">
+                  {plan.workout_goal ?? "Personalized plan"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">
+            <BadgeCheck className="h-3.5 w-3.5" />
+            AI Generated
+          </span>
+        </div>
+
+        {/* Date */}
+        {created && (
+          <div className="mb-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+            <CalendarDays className="h-3.5 w-3.5" />
+            {created}
+          </div>
+        )}
+
+        {/* Intro */}
+        <p className="mb-4 line-clamp-3 whitespace-pre-wrap text-sm text-gray-700">
+          {plan.intro_text ??
+            "Your plan adapts based on your sessions—volume, intensity, and movement selection."}
+        </p>
+
+        {/* Footer */}
+        <div className="mt-auto flex items-center justify-between border-t pt-3">
+          <div className="text-sm text-gray-600">
+            {Array.isArray(plan.exercises) && (
+              <span>💪 {plan.exercises.length} exercises</span>
+            )}
+          </div>
+          <span className="inline-flex items-center text-sm font-medium text-indigo-600">
+            View{" "}
+            <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+          </span>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="mx-auto max-w-2xl rounded-3xl border bg-white p-10 text-center shadow-sm">
+      <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-md">
+        <Wand2 className="h-7 w-7" />
+      </div>
+      <h2 className="text-2xl font-bold">No Workouts Yet</h2>
+      <p className="mt-2 text-muted-foreground">
+        Generate your first AI-tailored plan and we’ll adapt it as you progress.
+      </p>
+      <div className="mt-6">
+        <Link href="/workouts/new">
+          <GenerateAIButton />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function CardSkeleton() {
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="mb-3 flex items-center gap-3">
+        <div className="h-9 w-9 rounded-full bg-gray-200" />
+        <div className="h-3 w-24 rounded bg-gray-200" />
+      </div>
+      <div className="mb-2 h-3 w-32 rounded bg-gray-200" />
+      <div className="mb-2 h-12 w-full rounded bg-gray-200" />
+      <div className="mt-4 h-4 w-1/2 rounded bg-gray-200" />
     </div>
   );
 }
