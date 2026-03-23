@@ -6,6 +6,7 @@ import {
   FormControl,
   FormField,
   FormItem,
+  FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -20,7 +21,15 @@ import { parseWorkoutPlanText } from "@/lib/utils";
 import { useMutation } from "@tanstack/react-query";
 import { saveWorkoutPlan } from "@/lib/workout";
 import { useRouter } from "next/navigation";
-import { Sparkles, Save, ArrowLeft } from "lucide-react";
+import {
+  Sparkles,
+  Save,
+  ArrowLeft,
+  User,
+  Target,
+  Hash,
+  AlertCircle,
+} from "lucide-react";
 import Link from "next/link";
 
 function YouTubePlayer({
@@ -127,111 +136,160 @@ const NewWorkoutPage = () => {
   });
 
   return (
-    <div className="min-h-[calc(100vh-72px)] bg-background px-4 py-10 md:px-8">
-      <div className="mx-auto max-w-2xl">
+    <div className="min-h-[calc(100vh-56px)] bg-background px-4 py-8 md:px-8">
+      <div className="mx-auto max-w-xl">
 
         {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
-              Build Your Plan
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Pilates, Yoga, or any fitness goal — AI builds it for you.
+        <div className="mb-8">
+          <Link
+            href="/workouts"
+            className="mb-5 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" /> Back to Practices
+          </Link>
+          <h1 className="text-2xl font-bold tracking-tight">Build Your Plan</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Tell us about yourself and your goals — AI does the rest.
+          </p>
+        </div>
+
+        {/* Form card */}
+        <div className="rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden">
+
+          {/* Card header strip */}
+          <div className="border-b border-border/60 bg-muted/30 px-6 py-4">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              Your Profile
             </p>
           </div>
-          <Link href="/workouts">
-            <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground">
-              <ArrowLeft className="h-4 w-4" /> Back
-            </Button>
-          </Link>
+
+          <div className="p-6">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+
+                {/* Name */}
+                <FormField
+                  control={form.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">Full name</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <User className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            {...field}
+                            placeholder="e.g. Sarah Johnson"
+                            className="pl-9"
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Age */}
+                <FormField
+                  control={form.control}
+                  name="age"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">Age</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Hash className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="e.g. 28"
+                            className="pl-9"
+                            value={field.value === 0 ? "" : field.value}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              if (v === "") field.onChange(0);
+                              else if (/^\d+$/.test(v)) field.onChange(parseInt(v, 10));
+                            }}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Goal */}
+                <FormField
+                  control={form.control}
+                  name="workoutGoal"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">Fitness goal</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Target className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            {...field}
+                            placeholder="e.g. yoga flexibility, pilates core, weight loss"
+                            className="pl-9"
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="pt-1">
+                  <Button
+                    type="submit"
+                    className="w-full gap-2 rounded-xl"
+                    size="lg"
+                    disabled={generatePlanMutation.isPending}
+                  >
+                    {generatePlanMutation.isPending ? (
+                      <>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground" />
+                        Crafting your plan…
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4" /> Generate My Plan
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+              </form>
+            </Form>
+          </div>
         </div>
 
-        {/* Form */}
-        <div className="rounded-2xl border border-border/60 bg-card p-6 shadow-sm">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="username"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input {...field} placeholder="Your name" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="age"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="text"
-                        placeholder="Age"
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          if (v === "") field.onChange(0);
-                          else if (/^\d+$/.test(v)) field.onChange(parseInt(v, 10));
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="workoutGoal"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="Goal — e.g. yoga flexibility, pilates core, weight loss, build strength"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button
-                type="submit"
-                className="w-full gap-2"
-                size="lg"
-                disabled={generatePlanMutation.isPending}
+        {/* Feature hints */}
+        {!workoutPlan && !generatePlanMutation.isPending && !error && (
+          <div className="mt-6 grid grid-cols-3 gap-3">
+            {[
+              { icon: "🧘", label: "Pilates & Yoga" },
+              { icon: "🎬", label: "Video guides" },
+              { icon: "⚡", label: "AI-tailored" },
+            ].map(({ icon, label }) => (
+              <div
+                key={label}
+                className="flex flex-col items-center gap-1.5 rounded-xl border border-border/50 bg-muted/20 py-4 text-center"
               >
-                {generatePlanMutation.isPending ? (
-                  <>
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground" />
-                    Generating…
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4" /> Generate Plan
-                  </>
-                )}
-              </Button>
-            </form>
-          </Form>
-        </div>
-
-        {/* Error */}
-        {error && (
-          <div className="mt-4 rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive">
-            {error}
+                <span className="text-xl">{icon}</span>
+                <span className="text-xs text-muted-foreground font-medium">{label}</span>
+              </div>
+            ))}
           </div>
         )}
 
-        {/* Empty prompt */}
-        {!workoutPlan && !generatePlanMutation.isPending && !error && (
-          <p className="mt-10 text-center text-sm text-muted-foreground">
-            Fill in the form above to generate your personalized Pilates or Yoga plan.
-          </p>
+        {/* Error */}
+        {error && (
+          <div className="mt-5 flex items-start gap-3 rounded-xl border border-destructive/25 bg-destructive/5 p-4">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+            <p className="text-sm text-destructive">{error}</p>
+          </div>
         )}
 
         {/* Results */}
@@ -256,7 +314,6 @@ const NewWorkoutPage = () => {
                       key={index}
                       className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm"
                     >
-                      {/* Card header */}
                       <div className="flex items-center justify-between gap-3 bg-gradient-to-r from-primary/10 to-secondary/10 px-5 py-3.5">
                         <h3 className="font-semibold">
                           {index + 1}. {exercise.name}
@@ -270,7 +327,6 @@ const NewWorkoutPage = () => {
                           </span>
                         </div>
                       </div>
-                      {/* Embedded video */}
                       <div className="p-4">
                         <YouTubePlayer videoUrl={exercise.videoUrl} title={exercise.name} />
                       </div>
@@ -289,7 +345,7 @@ const NewWorkoutPage = () => {
             {/* Save */}
             <div className="border-t border-border/50 pt-5">
               <Button
-                className="w-full gap-2"
+                className="w-full gap-2 rounded-xl"
                 size="lg"
                 disabled={savePlanMutation.isPending}
                 onClick={() => savePlanMutation.mutate()}

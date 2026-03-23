@@ -11,15 +11,20 @@ import {
   ChevronRight,
   BadgeCheck,
   CalendarDays,
+  RefreshCw,
+  AlertCircle,
 } from "lucide-react";
 
 export default function WorkoutsPage() {
   const [plans, setPlans] = useState<WorkoutPlanRecord[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
+    setLoading(true);
+    setError(null);
     (async () => {
       try {
         const data = await fetchWorkoutPlans();
@@ -37,7 +42,7 @@ export default function WorkoutsPage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [retryKey]);
 
   return (
     <div className="min-h-[calc(100vh-72px)] px-4 py-10 md:px-10">
@@ -68,8 +73,20 @@ export default function WorkoutsPage() {
 
         {/* Error */}
         {error && (
-          <div className="mb-6 rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive">
-            {error}
+          <div className="mb-6 flex items-start gap-4 rounded-2xl border border-destructive/20 bg-destructive/5 p-5">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-destructive">Could not load practices</p>
+              <p className="mt-0.5 text-sm text-destructive/70">{error}</p>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="shrink-0 gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={() => setRetryKey((k) => k + 1)}
+            >
+              <RefreshCw className="h-3.5 w-3.5" /> Retry
+            </Button>
           </div>
         )}
 
