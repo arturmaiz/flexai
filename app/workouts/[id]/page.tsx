@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { fetchWorkoutPlanById } from "@/lib/workout";
 import type { WorkoutPlanRecord } from "@/lib/types";
+import type { Exercise } from "@/app/workouts/new/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -121,7 +122,7 @@ export default function WorkoutDetailPage() {
     exercise,
     index,
   }: {
-    exercise: any;
+    exercise: Exercise;
     index: number;
   }) => (
     <li>
@@ -211,9 +212,6 @@ export default function WorkoutDetailPage() {
         <div className="flex items-center justify-end gap-3 pt-2">
           <Link href="/workouts">
             <Button variant="ghost">Back</Button>
-          </Link>
-          <Link href={`/workouts/${params.id}/edit`}>
-            <Button>Edit Plan</Button>
           </Link>
         </div>
       </div>
