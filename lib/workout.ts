@@ -1,10 +1,11 @@
-import { supabase } from "./supabase";
+import { getSupabase } from "./supabase";
 import { WorkoutPlanRecord } from "./types";
 import { WORKOUT_PLANS_TABLE } from "./constants";
 
 export async function saveWorkoutPlan(
   record: Omit<WorkoutPlanRecord, "id" | "created_at">
 ): Promise<string> {
+  const supabase = getSupabase();
   const { data, error } = await supabase
     .from(WORKOUT_PLANS_TABLE)
     .insert(record)
@@ -18,6 +19,7 @@ export async function saveWorkoutPlan(
 }
 
 export async function fetchWorkoutPlans(): Promise<WorkoutPlanRecord[]> {
+  const supabase = getSupabase();
   const { data, error } = await supabase
     .from(WORKOUT_PLANS_TABLE)
     .select("*")
@@ -32,6 +34,7 @@ export async function fetchWorkoutPlans(): Promise<WorkoutPlanRecord[]> {
 export async function fetchWorkoutPlanById(
   id: string
 ): Promise<WorkoutPlanRecord> {
+  const supabase = getSupabase();
   const { data, error } = await supabase
     .from(WORKOUT_PLANS_TABLE)
     .select("*")

@@ -22,11 +22,7 @@ export function NavigationMenuComponent() {
             <Link href="/workouts">Workouts</Link>
           </NavigationMenuLink>
         </NavigationMenuItem>
-        <NavigationMenuItem>
-          <NavigationMenuLink asChild>
-            <Link href="/profile">Profile</Link>
-          </NavigationMenuLink>
-        </NavigationMenuItem>
+
       </NavigationMenuList>
     </NavigationMenu>
   );
