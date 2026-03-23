@@ -10,4 +10,6 @@ export const formSchema = z.object({
   workoutGoal: z.string().min(5, {
     message: "Please enter your workout goal (at least 5 characters).",
   }),
+  fitnessLevel: z.enum(["beginner", "intermediate", "advanced"]),
+  injuries: z.string().optional(),
 });

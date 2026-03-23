@@ -3,9 +3,9 @@ import { NextResponse } from "next/server";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { username, age, workoutGoal } = body;
+    const { username, age, workoutGoal, fitnessLevel, injuries } = body;
 
-    if (!username || !age || !workoutGoal) {
+    if (!username || !age || !workoutGoal || !fitnessLevel) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -40,6 +40,8 @@ IMPORTANT RULES:
 - For EVERY exercise provide a REAL YouTube video URL with a known video ID
 - Use bullet points and clear formatting
 - Be encouraging but concise
+- ALWAYS adapt difficulty to the trainer's fitness level (beginner / intermediate / advanced)
+- ALWAYS avoid exercises that could worsen reported injuries or limitations; suggest safe modifications when relevant
 
 PERSONALIZATION MESSAGE:
 Always start with: "Hey ${username}! 👋 The more you use FlexAI, the better I'll understand your journey and create plans tailored specifically for you! 🎯"
@@ -53,7 +55,10 @@ VIDEO: [Real YouTube URL, e.g. https://www.youtube.com/watch?v=VIDEOID]
             },
             {
               role: "user",
-              content: `Create a personalized Pilates, Yoga, or fitness plan for ${username}, age ${age}, goal: ${workoutGoal}.
+              content: `Create a personalized Pilates, Yoga, or fitness plan for ${username}, age ${age}.
+
+Fitness level: ${fitnessLevel}
+Goal: ${workoutGoal}${injuries ? `\nInjuries / limitations: ${injuries} — avoid exercises that aggravate these areas and suggest safe alternatives where needed.` : ""}
 
 Use this EXACT format for each exercise (include real YouTube video IDs):
 

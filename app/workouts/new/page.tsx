@@ -28,7 +28,10 @@ import {
   Target,
   Hash,
   AlertCircle,
+  Activity,
+  ShieldAlert,
 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
 
 function YouTubePlayer({
@@ -79,6 +82,8 @@ const NewWorkoutPage = () => {
       username: "",
       age: 0,
       workoutGoal: "",
+      fitnessLevel: "beginner" as const,
+      injuries: "",
     },
   });
 
@@ -238,6 +243,56 @@ const NewWorkoutPage = () => {
                             {...field}
                             placeholder="e.g. yoga flexibility, pilates core, weight loss"
                             className="pl-9"
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Fitness level */}
+                <FormField
+                  control={form.control}
+                  name="fitnessLevel"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">Fitness level</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Activity className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <select
+                            {...field}
+                            className="flex h-10 w-full rounded-md border border-input bg-background pl-9 pr-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                          >
+                            <option value="beginner">Beginner</option>
+                            <option value="intermediate">Intermediate</option>
+                            <option value="advanced">Advanced</option>
+                          </select>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Injuries */}
+                <FormField
+                  control={form.control}
+                  name="injuries"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">
+                        Injuries or limitations{" "}
+                        <span className="text-muted-foreground font-normal">(optional)</span>
+                      </FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <ShieldAlert className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                          <Textarea
+                            {...field}
+                            placeholder="e.g. lower back pain, bad knees, shoulder injury…"
+                            className="pl-9 min-h-[80px] resize-none"
                           />
                         </div>
                       </FormControl>
