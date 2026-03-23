@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import type { WorkoutPlanRecord } from "@/lib/types";
+import { getSupabase } from "@/lib/supabase";
+import { WORKOUT_PLANS_TABLE } from "@/lib/constants";
 import {
   Wand2,
   Sparkles,
@@ -26,10 +28,13 @@ export default function WorkoutsPage() {
     setError(null);
     (async () => {
       try {
-        const res = await fetch("/api/workouts");
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.error || "Failed to load practices");
-        if (isMounted) setPlans(json.data);
+        const supabase = getSupabase();
+        const { data, error: sbError } = await supabase
+          .from(WORKOUT_PLANS_TABLE)
+          .select("*")
+          .order("created_at", { ascending: false });
+        if (sbError) throw new Error(sbError.message);
+        if (isMounted) setPlans((data as WorkoutPlanRecord[]) ?? []);
       } catch (err) {
         if (isMounted) {
           const message =
