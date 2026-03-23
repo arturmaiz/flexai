@@ -3,7 +3,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { fetchWorkoutPlanById } from "@/lib/workout";
 import type { WorkoutPlanRecord } from "@/lib/types";
 import type { Exercise } from "@/app/workouts/new/types";
 import { Button } from "@/components/ui/button";
@@ -70,8 +69,10 @@ export default function WorkoutDetailPage() {
     let isMounted = true;
     (async () => {
       try {
-        const data = await fetchWorkoutPlanById(params.id as string);
-        if (isMounted) setWorkout(data);
+        const res = await fetch(`/api/workouts/${params.id}`);
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || "Failed to load practice");
+        if (isMounted) setWorkout(json.data);
       } catch (err) {
         if (isMounted)
           setError(err instanceof Error ? err.message : "Failed to load practice");
