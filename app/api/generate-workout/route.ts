@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-
     const { username, age, workoutGoal } = body;
 
     if (!username || !age || !workoutGoal) {
@@ -20,8 +19,6 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log("Generating workout plan for:", { username, age, workoutGoal });
-
     const groqResponse = await fetch(
       "https://api.groq.com/openai/v1/chat/completions",
       {
@@ -35,46 +32,50 @@ export async function POST(request: Request) {
           messages: [
             {
               role: "system",
-              content: `You are a professional fitness trainer and workout planner.
+              content: `You are a professional Pilates and Yoga instructor who also specialises in general fitness training.
 
 IMPORTANT RULES:
-- Keep responses SHORT and TO THE POINT - no long explanations
-- Add relevant emojis (💪, 🏋️, 🔥, ⚡, 🎯, etc.) but use them sparingly (2-3 per section max)
-- For EVERY exercise, include a YouTube search link in this exact format: [Exercise Name](https://www.youtube.com/results?search_query=how+to+do+[exercise+name]+proper+form)
+- Keep responses SHORT and TO THE POINT
+- Add 1-2 relevant emojis per section (🧘, 🌿, 💪, 🔥, ⚡, 🎯)
+- For EVERY exercise provide a REAL YouTube video URL with a known video ID
 - Use bullet points and clear formatting
 - Be encouraging but concise
 
 PERSONALIZATION MESSAGE:
-Always start with: "Hey ${username}! 👋 The more you use this app, the better I'll understand your fitness journey and create plans tailored specifically for you! 🎯"
+Always start with: "Hey ${username}! 👋 The more you use FlexAI, the better I'll understand your journey and create plans tailored specifically for you! 🎯"
 
-EXERCISE FORMAT:
-For each exercise, use this EXACT format:
+EXERCISE FORMAT — use this EXACT format for every exercise:
 EXERCISE: [Exercise Name]
 SETS: [number]
-REPS: [number or range]
-VIDEO: [Use REAL YouTube video URL format like: https://www.youtube.com/watch?v=VIDEOID or just provide a common exercise video search that exists]
+REPS: [number or duration, e.g. 12 or 30s]
+VIDEO: [Real YouTube URL, e.g. https://www.youtube.com/watch?v=VIDEOID]
 ---`,
             },
             {
               role: "user",
-              content: `Create a personalized workout plan for ${username}, age ${age}, goal: ${workoutGoal}.
+              content: `Create a personalized Pilates, Yoga, or fitness plan for ${username}, age ${age}, goal: ${workoutGoal}.
 
-IMPORTANT: Use this EXACT format for each exercise:
+Use this EXACT format for each exercise (include real YouTube video IDs):
 
-EXERCISE: Push-ups
+EXERCISE: Downward Dog
 SETS: 3
-REPS: 10-15
-VIDEO: https://www.youtube.com/watch?v=IODxDxX7oi4
+REPS: 30s
+VIDEO: https://www.youtube.com/watch?v=j97SSGsnCAQ
 ---
 
-EXERCISE: Squats
-SETS: 4
-REPS: 12
-VIDEO: https://www.youtube.com/watch?v=YaXPRqUwItQ
+EXERCISE: Pilates Roll-Up
+SETS: 3
+REPS: 10
+VIDEO: https://www.youtube.com/watch?v=gGFRj9OMBOA
 ---
 
-Include 4-6 exercises total. Keep intro message SHORT (2-3 lines max).
-You can use real YouTube video IDs or search URLs like: https://www.youtube.com/results?search_query=how+to+do+exercise+name+proper+form`,
+EXERCISE: Warrior II
+SETS: 3
+REPS: 45s
+VIDEO: https://www.youtube.com/watch?v=7kgZnJE4WEI
+---
+
+Include 4-6 exercises. Keep the intro SHORT (2-3 lines max). Choose exercises appropriate for the goal: if yoga → yoga poses, if pilates → pilates moves, if strength → gym exercises, if mixed → blend them.`,
             },
           ],
           temperature: 0.7,
@@ -84,14 +85,8 @@ You can use real YouTube video IDs or search URLs like: https://www.youtube.com/
     );
 
     if (!groqResponse.ok) {
-      const error = await groqResponse.json();
-      console.error("Groq API error:", error);
-
-      let errorMessage = "Failed to generate workout plan";
-      if (error.error?.message) {
-        errorMessage = error.error.message;
-      }
-
+      const errorData = await groqResponse.json();
+      const errorMessage = errorData.error?.message || "Failed to generate plan";
       return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 
@@ -99,30 +94,19 @@ You can use real YouTube video IDs or search URLs like: https://www.youtube.com/
     const workoutPlan = groqData.choices?.[0]?.message?.content;
 
     if (!workoutPlan) {
-      return NextResponse.json(
-        { error: "No workout plan generated" },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "No plan generated" }, { status: 500 });
     }
 
     return NextResponse.json(
       {
         success: true,
-        message: "Workout plan created successfully",
-        data: {
-          username,
-          age,
-          workoutGoal,
-          workoutPlan,
-        },
+        message: "Plan created successfully",
+        data: { username, age, workoutGoal, workoutPlan },
       },
       { status: 201 }
     );
   } catch (error) {
     console.error("Error:", error);
-    return NextResponse.json(
-      { error: "Failed to process request" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to process request" }, { status: 500 });
   }
 }
