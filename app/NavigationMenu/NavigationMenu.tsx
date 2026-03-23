@@ -7,43 +7,55 @@ export function NavigationMenuComponent() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-md">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <Link href="/" className="flex items-center gap-2 font-bold text-lg tracking-tight">
-          <span className="text-primary">🧘</span>
-          <span>
-            Flex<span className="text-primary">AI</span>
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/90 backdrop-blur-xl">
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-5">
+
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2 select-none">
+          <span className="text-xl leading-none">🧘</span>
+          <span className="text-base font-semibold tracking-tight">
+            Flex<span className="text-primary font-bold">AI</span>
           </span>
         </Link>
 
-        <nav className="flex items-center gap-1">
+        {/* Nav links + CTA */}
+        <nav className="flex items-center gap-5">
           <Link
             href="/"
-            className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+            className={`relative text-sm font-medium transition-colors ${
               pathname === "/"
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                ? "text-foreground"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             Home
+            {pathname === "/" && (
+              <span className="absolute -bottom-[18px] left-0 right-0 h-[2px] rounded-full bg-primary" />
+            )}
           </Link>
+
           <Link
             href="/workouts"
-            className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+            className={`relative text-sm font-medium transition-colors ${
               pathname.startsWith("/workouts")
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                ? "text-foreground"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            My Practices
+            Practices
+            {pathname.startsWith("/workouts") && (
+              <span className="absolute -bottom-[18px] left-0 right-0 h-[2px] rounded-full bg-primary" />
+            )}
           </Link>
+
           <Link
             href="/workouts/new"
-            className="ml-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:opacity-90 hover:shadow-md"
+            className="rounded-full bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-85"
           >
             + New Plan
           </Link>
         </nav>
+
       </div>
     </header>
   );
