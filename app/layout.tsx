@@ -5,9 +5,9 @@ import { NavigationMenuComponent } from "./NavigationMenu/NavigationMenu";
 import { Footer } from "./Footer/Footer";
 
 export const metadata: Metadata = {
-  title: "F💪exAI",
+  title: "FlexAI — AI Pilates & Yoga",
   description:
-    "FlexAI is a platform for creating and managing workout routines",
+    "FlexAI generates personalized Pilates and Yoga plans powered by AI — with video tutorials and adaptive progression.",
 };
 
 export default function RootLayout({
