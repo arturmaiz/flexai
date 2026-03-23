@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { fetchWorkoutPlans } from "@/lib/workout";
 import type { WorkoutPlanRecord } from "@/lib/types";
 import {
   Wand2,
@@ -27,8 +26,10 @@ export default function WorkoutsPage() {
     setError(null);
     (async () => {
       try {
-        const data = await fetchWorkoutPlans();
-        if (isMounted) setPlans(data);
+        const res = await fetch("/api/workouts");
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || "Failed to load practices");
+        if (isMounted) setPlans(json.data);
       } catch (err) {
         if (isMounted) {
           const message =

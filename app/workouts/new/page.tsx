@@ -19,7 +19,6 @@ import { Exercise } from "./types";
 import { getVideoIdFromUrl } from "@/lib/youtube";
 import { parseWorkoutPlanText } from "@/lib/utils";
 import { useMutation } from "@tanstack/react-query";
-import { saveWorkoutPlan } from "@/lib/workout";
 import { useRouter } from "next/navigation";
 import {
   Sparkles,
@@ -120,14 +119,21 @@ const NewWorkoutPage = () => {
     mutationFn: async () => {
       if (!workoutPlan) throw new Error("No plan to save");
       const { username, age, workoutGoal } = form.getValues();
-      return saveWorkoutPlan({
-        username,
-        age,
-        workout_goal: workoutGoal,
-        intro_text: introText,
-        plan_text: workoutPlan,
-        exercises,
+      const res = await fetch("/api/workouts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username,
+          age,
+          workout_goal: workoutGoal,
+          intro_text: introText,
+          plan_text: workoutPlan,
+          exercises,
+        }),
       });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to save plan");
+      return json.data.id as string;
     },
     onSuccess: () => router.push("/workouts"),
     onError: (err: unknown) => {
