@@ -19,10 +19,10 @@ export function NavigationMenuComponent() {
         </Link>
 
         {/* Nav links + CTA */}
-        <nav className="flex items-center gap-5">
+        <nav className="flex items-center gap-3 sm:gap-5">
           <Link
             href="/"
-            className={`relative text-sm font-medium transition-colors ${
+            className={`relative hidden sm:block text-sm font-medium transition-colors ${
               pathname === "/"
                 ? "text-foreground"
                 : "text-muted-foreground hover:text-foreground"
@@ -64,7 +64,7 @@ export function NavigationMenuComponent() {
 
           <Link
             href="/workouts/new"
-            className="rounded-full bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-85"
+            className="shrink-0 whitespace-nowrap rounded-full bg-primary px-3 py-1.5 text-xs sm:px-4 sm:text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-85"
           >
             + New Plan
           </Link>
