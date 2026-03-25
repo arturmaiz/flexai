@@ -49,6 +49,20 @@ export function NavigationMenuComponent() {
           </Link>
 
           <Link
+            href="/pricing"
+            className={`relative text-sm font-medium transition-colors ${
+              pathname === "/pricing"
+                ? "text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Pricing
+            {pathname === "/pricing" && (
+              <span className="absolute -bottom-[18px] left-0 right-0 h-[2px] rounded-full bg-primary" />
+            )}
+          </Link>
+
+          <Link
             href="/workouts/new"
             className="rounded-full bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-85"
           >

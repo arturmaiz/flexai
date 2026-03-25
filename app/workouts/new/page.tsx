@@ -30,9 +30,13 @@ import {
   AlertCircle,
   Activity,
   ShieldAlert,
+  Crown,
+  Zap,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
+import { useProStatus } from "@/hooks/useProStatus";
+import { FREE_PLAN_LIMIT } from "@/lib/stripe";
 
 function YouTubePlayer({
   videoUrl,
@@ -75,6 +79,7 @@ const NewWorkoutPage = () => {
   const [introText, setIntroText] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { isPro, canCreatePlan, plansRemaining, loading: proLoading } = useProStatus();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -164,8 +169,37 @@ const NewWorkoutPage = () => {
           </p>
         </div>
 
+        {/* Pro status banner */}
+        {!proLoading && !canCreatePlan && (
+          <div className="mb-6 rounded-2xl border border-primary/30 bg-primary/5 p-6 text-center">
+            <Crown className="mx-auto mb-3 h-8 w-8 text-primary" />
+            <h2 className="text-lg font-bold">Free plan limit reached</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              You&apos;ve used all {FREE_PLAN_LIMIT} free plans. Upgrade to Pro for unlimited AI practices.
+            </p>
+            <Link href="/pricing" className="mt-4 inline-block">
+              <Button className="gap-2 rounded-xl">
+                <Zap className="h-4 w-4" /> Upgrade to Pro — $9.99/mo
+              </Button>
+            </Link>
+          </div>
+        )}
+
+        {!proLoading && canCreatePlan && !isPro && plansRemaining < FREE_PLAN_LIMIT && (
+          <div className="mb-4 flex items-center justify-between rounded-xl border border-border/50 bg-muted/20 px-4 py-3 text-sm">
+            <span className="text-muted-foreground">
+              {plansRemaining === 1
+                ? "1 free plan remaining"
+                : `${plansRemaining} free plans remaining`}
+            </span>
+            <Link href="/pricing" className="font-medium text-primary hover:underline">
+              Go Pro
+            </Link>
+          </div>
+        )}
+
         {/* Form card */}
-        <div className="rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden">
+        <div className={`rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden${!canCreatePlan ? " pointer-events-none opacity-40 select-none" : ""}`}>
 
           {/* Card header strip */}
           <div className="border-b border-border/60 bg-muted/30 px-6 py-4">
