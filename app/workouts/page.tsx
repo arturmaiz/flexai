@@ -1,54 +1,26 @@
-"use client";
-
-import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import type { WorkoutPlanRecord } from "@/lib/types";
-import { getSupabase } from "@/lib/supabase";
-import { WORKOUT_PLANS_TABLE } from "@/lib/constants";
+import { fetchWorkoutPlans } from "@/lib/workout";
 import {
   Wand2,
   Sparkles,
   ChevronRight,
   BadgeCheck,
   CalendarDays,
-  RefreshCw,
   AlertCircle,
 } from "lucide-react";
+import { RetryButton } from "./RetryButton";
 
-export default function WorkoutsPage() {
-  const [plans, setPlans] = useState<WorkoutPlanRecord[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [retryKey, setRetryKey] = useState(0);
+export default async function WorkoutsPage() {
+  let plans: WorkoutPlanRecord[] = [];
+  let error: string | null = null;
 
-  useEffect(() => {
-    let isMounted = true;
-    setLoading(true);
-    setError(null);
-    (async () => {
-      try {
-        const supabase = getSupabase();
-        const { data, error: supabaseError } = await supabase
-          .from(WORKOUT_PLANS_TABLE)
-          .select("*")
-          .order("created_at", { ascending: false });
-        if (supabaseError) throw new Error(supabaseError.message);
-        if (isMounted) setPlans((data as WorkoutPlanRecord[]) ?? []);
-      } catch (err) {
-        if (isMounted) {
-          const message =
-            err instanceof Error ? err.message : "Failed to load practices";
-          setError(message);
-        }
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    })();
-    return () => {
-      isMounted = false;
-    };
-  }, [retryKey]);
+  try {
+    plans = await fetchWorkoutPlans();
+  } catch (err) {
+    error = err instanceof Error ? err.message : "Failed to load practices";
+  }
 
   return (
     <div className="min-h-[calc(100vh-72px)] px-4 py-10 md:px-10">
@@ -68,15 +40,6 @@ export default function WorkoutsPage() {
           </Link>
         </div>
 
-        {/* Loading */}
-        {loading && (
-          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <CardSkeleton key={i} />
-            ))}
-          </div>
-        )}
-
         {/* Error */}
         {error && (
           <div className="mb-6 flex items-start gap-4 rounded-2xl border border-destructive/20 bg-destructive/5 p-5">
@@ -85,22 +48,15 @@ export default function WorkoutsPage() {
               <p className="text-sm font-medium text-destructive">Could not load practices</p>
               <p className="mt-0.5 text-sm text-destructive/70">{error}</p>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="shrink-0 gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
-              onClick={() => setRetryKey((k) => k + 1)}
-            >
-              <RefreshCw className="h-3.5 w-3.5" /> Retry
-            </Button>
+            <RetryButton />
           </div>
         )}
 
         {/* Empty */}
-        {!loading && !error && plans.length === 0 && <EmptyState />}
+        {!error && plans.length === 0 && <EmptyState />}
 
         {/* List */}
-        {!loading && !error && plans.length > 0 && (
+        {!error && plans.length > 0 && (
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
             {plans.map((p) => (
               <WorkoutCard key={p.id} plan={p} />
@@ -127,17 +83,13 @@ function GenerateAIButton() {
 }
 
 function WorkoutCard({ plan }: { plan: WorkoutPlanRecord }) {
-  const created = useMemo(
-    () =>
-      plan.created_at
-        ? new Date(plan.created_at).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          })
-        : "",
-    [plan.created_at]
-  );
+  const created = plan.created_at
+    ? new Date(plan.created_at).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "";
 
   const initials =
     (plan.username?.[0] ?? "U").toUpperCase() +
@@ -211,28 +163,6 @@ function EmptyState() {
           <GenerateAIButton />
         </Link>
       </div>
-    </div>
-  );
-}
-
-function CardSkeleton() {
-  return (
-    <div className="animate-pulse rounded-2xl border border-border/60 bg-card p-5 shadow-sm">
-      <div className="mb-3 flex items-center gap-3">
-        <div className="h-9 w-9 rounded-full bg-muted" />
-        <div className="flex-1 space-y-1.5">
-          <div className="h-3 w-24 rounded bg-muted" />
-          <div className="h-2.5 w-16 rounded bg-muted" />
-        </div>
-      </div>
-      <div className="mb-2 h-2.5 w-20 rounded bg-muted" />
-      <div className="space-y-1.5">
-        <div className="h-3 w-full rounded bg-muted" />
-        <div className="h-3 w-5/6 rounded bg-muted" />
-        <div className="h-3 w-4/6 rounded bg-muted" />
-      </div>
-      <div className="mt-4 h-px w-full bg-muted" />
-      <div className="mt-3 h-3 w-1/3 rounded bg-muted" />
     </div>
   );
 }
